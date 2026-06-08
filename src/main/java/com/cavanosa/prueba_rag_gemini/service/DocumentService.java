@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class DocumentService {
@@ -40,8 +41,13 @@ public class DocumentService {
         return DocumentResponse.from(doc);
     }
 
-    public void delete(String id) {
+    public String delete(String id) {
+        boolean exists = documentRegistry.stream()
+                        .anyMatch(doc-> doc.getId().equals(id));
+        if(!exists)
+            throw new NoSuchElementException("no existe ningún documento con id " + id + ".");
         vectorStore.delete(List.of(id));
         documentRegistry.removeIf(doc -> doc.getId().equals(id));
+        return "El documento con id " + id + " ha sido eliminado con éxito.";
     }
 }

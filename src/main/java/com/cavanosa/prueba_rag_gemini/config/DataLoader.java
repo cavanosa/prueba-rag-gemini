@@ -1,13 +1,16 @@
 package com.cavanosa.prueba_rag_gemini.config;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.document.Document;
 
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -25,16 +28,46 @@ public class DataLoader implements ApplicationRunner {
     private final VectorStore vectorStore;
     private final List<Document> documentRegistry;
     public final ObjectMapper objectMapper;
+    public final JdbcTemplate jdbcTemplate;
 
 
-    public DataLoader(VectorStore vectorStore, List<Document> documentRegistry, ObjectMapper objectMapper) {
+    public DataLoader(VectorStore vectorStore, List<Document> documentRegistry, ObjectMapper objectMapper, JdbcTemplate jdbcTemplate) {
         this.vectorStore = vectorStore;
         this.documentRegistry = documentRegistry;
         this.objectMapper = objectMapper;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM vector_store", Integer.class
+        );
+        if(count != null && count > 0) {
+            System.out.println("✅ VectorStore ya tiene " + count + " documentos, omitiendo carga.");
+            List<Document> existing = jdbcTemplate.query(
+                    "SELECT id, content, metadata FROM vector_store",
+                    (rs, rowNum) -> {
+                        try {
+                            Map<String, Object> metadata = objectMapper.readValue(
+                                    rs.getString("metadata"),
+                                    new TypeReference<Map<String, Object>>() {
+                                    }
+                            );
+                            Document doc = Document.builder()
+                                    .id(rs.getString("id"))
+                                    .text(rs.getString("content"))
+                                    .build();
+                            doc.getMetadata().putAll(metadata);
+                            return doc;
+                        } catch (Exception e) {
+                            throw new RuntimeException("Error leyendo metadata", e);
+                        }
+                    }
+            );
+            documentRegistry.addAll(existing);
+            return;
+        }
         File folder = documentsFolder.getFile();
         File[] textFiles = folder.listFiles((dir, name) -> name.endsWith(".txt"));
         if(textFiles == null || textFiles.length == 0) {
@@ -63,6 +96,6 @@ public class DataLoader implements ApplicationRunner {
         }
         vectorStore.add(docs);
         documentRegistry.addAll(docs);
-        // System.out.println(Arrays.toString(documentRegistry.toArray()));
+        System.out.println("✅ VectorStore ha cargado los documentos.");
     }
 }

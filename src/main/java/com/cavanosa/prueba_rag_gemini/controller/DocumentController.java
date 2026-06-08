@@ -31,8 +31,7 @@ public class DocumentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
-        documentService.delete(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiResponse.noContent());
+    public ResponseEntity<ApiResponse<String>> delete(@PathVariable String id) {
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.ok(documentService.delete(id)));
     }
 }
