@@ -5,6 +5,7 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiEmbeddingConnectionDetails;
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingModel;
 import org.springframework.ai.google.genai.text.GoogleGenAiTextEmbeddingOptions;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,11 @@ public class RagConfig {
 
     @Value("classpath:prompts/system.st")
     private Resource systemPrompt;
+
+    @Bean
+    public TokenTextSplitter tokenTextSplitter() {
+        return TokenTextSplitter.builder().build();
+    }
 
     @Bean
     @Primary
