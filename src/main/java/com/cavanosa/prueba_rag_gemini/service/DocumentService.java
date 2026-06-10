@@ -1,6 +1,10 @@
 package com.cavanosa.prueba_rag_gemini.service;
 
+import com.cavanosa.prueba_rag_gemini.dto.DocumentDetailResponse;
+import com.cavanosa.prueba_rag_gemini.dto.DocumentSummaryResponse;
 import com.cavanosa.prueba_rag_gemini.dto.UploadResponse;
+import com.cavanosa.prueba_rag_gemini.entity.DocumentEntity;
+import com.cavanosa.prueba_rag_gemini.repository.DocumentRepository;
 import com.cavanosa.prueba_rag_gemini.utils.DocumentFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
@@ -9,7 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 
 @Service
 public class DocumentService {
@@ -17,11 +25,23 @@ public class DocumentService {
     private final VectorStore vectorStore;
     private final TokenTextSplitter tokenTextSplitter;
     private final DocumentFactory documentFactory;
+    private final DocumentRepository documentRepository;
 
-    public DocumentService(VectorStore vectorStore, TokenTextSplitter tokenTextSplitter, DocumentFactory documentFactory) {
+    public DocumentService(VectorStore vectorStore, TokenTextSplitter tokenTextSplitter, DocumentFactory documentFactory, DocumentRepository documentRepository) {
         this.vectorStore = vectorStore;
         this.tokenTextSplitter = tokenTextSplitter;
         this.documentFactory = documentFactory;
+        this.documentRepository = documentRepository;
+    }
+
+    public List<DocumentSummaryResponse> getall() {
+        return documentRepository.findAll().stream().map(DocumentSummaryResponse::fromEntity).toList();
+    }
+
+    public DocumentDetailResponse findById(UUID id) {
+      DocumentEntity doc = documentRepository.findById(id)
+              .orElseThrow(()-> new NoSuchElementException("no existe el documento con id " + id +"."));
+      return DocumentDetailResponse.from(doc);
     }
 
     public UploadResponse upload(
@@ -33,28 +53,38 @@ public class DocumentService {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío.");
         }
-
-        if (!file.getOriginalFilename().endsWith(".txt")) {
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || fileName.endsWith(".txt")) {
             throw new IllegalArgumentException("Solo se permiten archivos .txt.");
         }
 
         try {
             String text = new String(file.getBytes());
-
+            UUID documentId = UUID.randomUUID();
             Document doc = documentFactory.build(
                     text,
                     categoria,
                     fuente,
                     file.getOriginalFilename()
             );
-
+            doc.getMetadata().put("document_id", documentId);
             List<Document> chunks =
                     tokenTextSplitter.split(List.of(doc));
+
+            DocumentEntity documentEntity = new DocumentEntity(
+                    documentId,
+                    fileName,
+                    categoria,
+                    fuente,
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd--MM-yyyy")),
+                    chunks.size()
+            );
+            documentRepository.save(documentEntity);
 
             vectorStore.add(chunks);
 
             return new UploadResponse(
-                    file.getOriginalFilename(),
+                    fileName,
                     chunks.size(),
                     file.getSize(),
                     categoria,
@@ -63,8 +93,7 @@ public class DocumentService {
 
         } catch (IOException e) {
             throw new RuntimeException(
-                    "Error leyendo el archivo",
-                    e
+                    e.getLocalizedMessage()
             );
         }
     }
