@@ -1,5 +1,6 @@
 package com.cavanosa.prueba_rag_gemini.controller;
 
+import com.cavanosa.prueba_rag_gemini.dto.DocumentDeleteResponse;
 import com.cavanosa.prueba_rag_gemini.dto.DocumentDetailResponse;
 import com.cavanosa.prueba_rag_gemini.dto.DocumentSummaryResponse;
 import com.cavanosa.prueba_rag_gemini.dto.UploadResponse;
@@ -42,6 +43,11 @@ public class DocumentController {
             @RequestParam String fuente
             ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(documentService.upload(file, categoria, fuente)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<DocumentDeleteResponse>> delete(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(ApiResponse.deleted(documentService.delete(id)));
     }
 
 }

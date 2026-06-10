@@ -18,4 +18,8 @@ public record ApiResponse<T>(
     public static ApiResponse<Void> noContent() {
         return new ApiResponse<>(HttpStatus.NO_CONTENT.value(), "No Content", null);
     }
+
+    public static <T> ApiResponse<T> deleted(T data) {
+        return new ApiResponse<>(HttpStatus.OK.value(), "deleted", data);
+    }
 }

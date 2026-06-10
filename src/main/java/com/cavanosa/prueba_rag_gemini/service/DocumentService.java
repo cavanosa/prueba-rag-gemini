@@ -1,5 +1,6 @@
 package com.cavanosa.prueba_rag_gemini.service;
 
+import com.cavanosa.prueba_rag_gemini.dto.DocumentDeleteResponse;
 import com.cavanosa.prueba_rag_gemini.dto.DocumentDetailResponse;
 import com.cavanosa.prueba_rag_gemini.dto.DocumentSummaryResponse;
 import com.cavanosa.prueba_rag_gemini.dto.UploadResponse;
@@ -54,7 +55,7 @@ public class DocumentService {
             throw new IllegalArgumentException("El archivo está vacío.");
         }
         String fileName = file.getOriginalFilename();
-        if (fileName == null || fileName.endsWith(".txt")) {
+        if (fileName == null || !fileName.endsWith(".txt")) {
             throw new IllegalArgumentException("Solo se permiten archivos .txt.");
         }
 
@@ -67,7 +68,6 @@ public class DocumentService {
                     fuente,
                     file.getOriginalFilename()
             );
-            doc.getMetadata().put("document_id", documentId);
             List<Document> chunks =
                     tokenTextSplitter.split(List.of(doc));
 
@@ -82,7 +82,7 @@ public class DocumentService {
             documentRepository.save(documentEntity);
 
             vectorStore.add(chunks);
-
+            System.out.println("Document ID = " + documentEntity.getId());
             return new UploadResponse(
                     fileName,
                     chunks.size(),
@@ -96,6 +96,19 @@ public class DocumentService {
                     e.getLocalizedMessage()
             );
         }
+    }
+
+    public DocumentDeleteResponse delete(UUID documentId) {
+        DocumentEntity doc = documentRepository.findById(documentId)
+                .orElseThrow(()-> new NoSuchElementException("no existe el documento con id " +documentId +"."));
+        List<String> chunkIds = documentRepository.findChunksIdByDocumentId(documentId.toString())
+                .stream()
+                .map(UUID::toString)
+                .toList();
+        if(!chunkIds.isEmpty())
+            vectorStore.delete(chunkIds);
+        documentRepository.delete(doc);
+        return new DocumentDeleteResponse(doc.getId(), doc.getFileName(), chunkIds.size());
     }
 
 

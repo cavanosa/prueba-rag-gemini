@@ -2,8 +2,9 @@ package com.cavanosa.prueba_rag_gemini.dto;
 
 import java.util.UUID;
 
-public record DeleteDocumentResponse(
+public record DocumentDeleteResponse(
         UUID documentId,
-        String message
+        String message,
+        int deletedChunks
 ) {
 }

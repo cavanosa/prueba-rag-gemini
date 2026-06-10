@@ -11,10 +11,11 @@ import java.util.Map;
 @Component
 public class DocumentFactory {
 
-    public Document build(String text,
-                          String categoria,
-                          String fuente,
-                          String fuente_fichero) {
+    public Document build(
+            String text,
+            String categoria,
+            String fuente,
+            String fuente_fichero) {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("categoria", categoria);
         metadata.put("fuente", fuente);
