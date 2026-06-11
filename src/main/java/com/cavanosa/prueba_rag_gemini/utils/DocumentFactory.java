@@ -7,11 +7,13 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class DocumentFactory {
 
     public Document build(
+            UUID documentId,
             String text,
             String categoria,
             String fuente,
@@ -21,6 +23,7 @@ public class DocumentFactory {
         metadata.put("fuente", fuente);
         metadata.put("fuente_fichero", fuente_fichero);
         metadata.put("fecha", LocalDate.now().format(DateTimeFormatter.ofPattern("dd--MM-yyyy")));
+        metadata.put("parent_document_id", documentId);
 
         return Document.builder()
                 .text(text)

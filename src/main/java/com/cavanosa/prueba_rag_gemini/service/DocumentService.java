@@ -7,6 +7,7 @@ import com.cavanosa.prueba_rag_gemini.dto.UploadResponse;
 import com.cavanosa.prueba_rag_gemini.entity.DocumentEntity;
 import com.cavanosa.prueba_rag_gemini.repository.DocumentRepository;
 import com.cavanosa.prueba_rag_gemini.utils.DocumentFactory;
+import com.cavanosa.prueba_rag_gemini.utils.TextExtractor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -40,9 +41,9 @@ public class DocumentService {
     }
 
     public DocumentDetailResponse findById(UUID id) {
-      DocumentEntity doc = documentRepository.findById(id)
-              .orElseThrow(()-> new NoSuchElementException("no existe el documento con id " + id +"."));
-      return DocumentDetailResponse.from(doc);
+        DocumentEntity doc = documentRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("no existe el documento con id " + id + "."));
+        return DocumentDetailResponse.from(doc);
     }
 
     public UploadResponse upload(
@@ -51,62 +52,76 @@ public class DocumentService {
             String fuente
     ) {
 
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("El archivo está vacío.");
-        }
         String fileName = file.getOriginalFilename();
-        if (fileName == null || !fileName.endsWith(".txt")) {
-            throw new IllegalArgumentException("Solo se permiten archivos .txt.");
-        }
-
+        String text;
         try {
-            String text = new String(file.getBytes());
-            UUID documentId = UUID.randomUUID();
-            Document doc = documentFactory.build(
-                    text,
-                    categoria,
-                    fuente,
-                    file.getOriginalFilename()
-            );
-            List<Document> chunks =
-                    tokenTextSplitter.split(List.of(doc));
-
-            DocumentEntity documentEntity = new DocumentEntity(
-                    documentId,
-                    fileName,
-                    categoria,
-                    fuente,
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd--MM-yyyy")),
-                    chunks.size()
-            );
-            documentRepository.save(documentEntity);
-
-            vectorStore.add(chunks);
-            System.out.println("Document ID = " + documentEntity.getId());
-            return new UploadResponse(
-                    fileName,
-                    chunks.size(),
-                    file.getSize(),
-                    categoria,
-                    fuente
-            );
-
+            text = TextExtractor.extractText(file);
         } catch (IOException e) {
-            throw new RuntimeException(
-                    e.getLocalizedMessage()
-            );
+            throw new IllegalArgumentException("No se pudo procesar el archivo");
         }
+        UUID documentId = UUID.randomUUID();
+        System.out.println("DOCUMENT ID = " + documentId);
+        Document doc = documentFactory.build(
+                documentId,
+                text,
+                categoria,
+                fuente,
+                file.getOriginalFilename()
+        );
+        System.out.println("DOC PARENT = " +
+                doc.getMetadata().get("parent_document_id"));
+
+        List<Document> chunks =
+                tokenTextSplitter.split(List.of(doc));
+
+        chunks.forEach(chunk ->
+                chunk.getMetadata().put(
+                        "parent_document_id",
+                        documentId.toString()
+                )
+        );
+        DocumentEntity documentEntity = new DocumentEntity(
+                documentId,
+                fileName,
+                categoria,
+                fuente,
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd--MM-yyyy")),
+                chunks.size()
+        );
+        vectorStore.add(chunks);
+        chunks.forEach(chunk -> {
+            System.out.println(
+                    "CHUNK PARENT = "
+                            + chunk.getMetadata().get("parent_document_id")
+            );
+        });
+        documentRepository.save(documentEntity);
+
+
+        return new UploadResponse(
+                fileName,
+                chunks.size(),
+                file.getSize(),
+                categoria,
+                fuente
+        );
+
     }
 
     public DocumentDeleteResponse delete(UUID documentId) {
         DocumentEntity doc = documentRepository.findById(documentId)
-                .orElseThrow(()-> new NoSuchElementException("no existe el documento con id " +documentId +"."));
+                .orElseThrow(() -> new NoSuchElementException("no existe el documento con id " + documentId + "."));
+        System.out.println("DELETE DOCUMENT ID = " + documentId);
         List<String> chunkIds = documentRepository.findChunksIdByDocumentId(documentId.toString())
                 .stream()
                 .map(UUID::toString)
                 .toList();
-        if(!chunkIds.isEmpty())
+        System.out.println("Chunks encontrados = " + chunkIds.size());
+        chunkIds.forEach(c -> System.out.println(c));
+        if (!chunkIds.isEmpty()) {
             vectorStore.delete(chunkIds);
+            System.out.println("Delete ejecutado");
+        }
         documentRepository.delete(doc);
         return new DocumentDeleteResponse(doc.getId(), doc.getFileName(), chunkIds.size());
     }
