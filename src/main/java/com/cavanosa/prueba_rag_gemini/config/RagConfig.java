@@ -10,11 +10,8 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.Resource;
-
-
 
 
 @Configuration
@@ -48,7 +45,7 @@ public class RagConfig {
     public ChatClient chatClient(ChatClient.Builder builder, VectorStore vectorStore) {
         return builder
                 .defaultSystem(systemPrompt)
-                .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore).build())
+                // .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore).build())
                 .build();
     }
 }
