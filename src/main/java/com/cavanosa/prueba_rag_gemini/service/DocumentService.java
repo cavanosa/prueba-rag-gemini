@@ -86,7 +86,7 @@ public class DocumentService {
                 mimeType,
                 categoria,
                 fuente,
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd--MM-yyyy")),
+                doc.getMetadata().get("fecha").toString(),
                 chunks.size()
         );
         vectorStore.add(chunks);
