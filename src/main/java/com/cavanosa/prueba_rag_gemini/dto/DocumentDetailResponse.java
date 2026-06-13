@@ -7,6 +7,9 @@ import java.util.UUID;
 public record DocumentDetailResponse(
         UUID id,
         String filename,
+        String content,
+        Long fileSize,
+        String mimeType,
         String categoria,
         String fuente,
         String uploadDate,
@@ -17,6 +20,9 @@ public record DocumentDetailResponse(
         return new DocumentDetailResponse(
                 entity.getId(),
                 entity.getFileName(),
+                entity.getContent(),
+                entity.getFileSize(),
+                entity.getMimeType(),
                 entity.getCategoria(),
                 entity.getFuente(),
                 entity.getUploadDate(),

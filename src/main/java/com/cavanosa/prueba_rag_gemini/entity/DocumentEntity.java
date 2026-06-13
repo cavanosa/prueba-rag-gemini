@@ -14,6 +14,15 @@ public class DocumentEntity {
     @Column(nullable = false)
     private String fileName;
 
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @Column(nullable = false)
+    private Long fileSize;
+
+    @Column(nullable = false)
+    private String mimeType;
+
     @Column(nullable = false)
     private String categoria;
 
@@ -28,9 +37,12 @@ public class DocumentEntity {
 
     public DocumentEntity(){}
 
-    public DocumentEntity(UUID id, String fileName, String categoria, String fuente, String uploadDate, Integer chunksCount) {
+    public DocumentEntity(UUID id, String fileName, String content, Long fileSize, String mimeType, String categoria, String fuente, String uploadDate, Integer chunksCount) {
         this.id = id;
         this.fileName = fileName;
+        this.content = content;
+        this.fileSize = fileSize;
+        this.mimeType = mimeType;
         this.categoria = categoria;
         this.fuente = fuente;
         this.uploadDate = uploadDate;
@@ -43,6 +55,18 @@ public class DocumentEntity {
 
     public String getFileName() {
         return fileName;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public Long getFileSize() {
+        return fileSize;
+    }
+
+    public String getMimeType() {
+        return mimeType;
     }
 
     public String getCategoria() {

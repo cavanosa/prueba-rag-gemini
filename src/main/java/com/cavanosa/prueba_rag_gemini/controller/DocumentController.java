@@ -23,7 +23,7 @@ public class DocumentController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DocumentDetailResponse>>> findBySpecification(@ModelAttribute DocumentFilterRequest filters) {
+    public ResponseEntity<ApiResponse<List<DocumentSummaryResponse>>> findBySpecification(@ModelAttribute DocumentFilterRequest filters) {
         return ResponseEntity.ok(ApiResponse.ok(documentService.findBySpecification(filters)));
     }
 

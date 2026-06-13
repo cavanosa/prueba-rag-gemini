@@ -13,7 +13,7 @@ public record DocumentSummaryResponse(
         Integer chunksCount
 ) {
 
-    public static DocumentSummaryResponse fromEntity(DocumentEntity entity) {
+    public static DocumentSummaryResponse from(DocumentEntity entity) {
         return new DocumentSummaryResponse(
                 entity.getId(),
                 entity.getFileName(),

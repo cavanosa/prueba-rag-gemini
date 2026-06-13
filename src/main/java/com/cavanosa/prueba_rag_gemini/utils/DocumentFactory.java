@@ -22,7 +22,7 @@ public class DocumentFactory {
         metadata.put("categoria", categoria);
         metadata.put("fuente", fuente);
         metadata.put("fuente_fichero", fuente_fichero);
-        metadata.put("fecha", LocalDate.now().format(DateTimeFormatter.ofPattern("dd--MM-yyyy")));
+        metadata.put("fecha", LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
         metadata.put("parent_document_id", documentId);
 
         return Document.builder()

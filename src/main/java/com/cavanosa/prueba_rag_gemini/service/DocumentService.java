@@ -35,19 +35,15 @@ public class DocumentService {
         this.documentRepository = documentRepository;
     }
 
-    public List<DocumentSummaryResponse> getall() {
-        return documentRepository.findAll().stream().map(DocumentSummaryResponse::fromEntity).toList();
-    }
-
     public List<String> getCategorias() {
         return documentRepository.findDistinctCategorias();
     }
 
     //specification
-    public List<DocumentDetailResponse> findBySpecification(DocumentFilterRequest filters) {
+    public List<DocumentSummaryResponse> findBySpecification(DocumentFilterRequest filters) {
         Specification<DocumentEntity> spec = DocumentSpecification.withFilters(filters);
         return documentRepository.findAll(spec).stream()
-                .map(DocumentDetailResponse::from).toList();
+                .map(DocumentSummaryResponse::from).toList();
     }
 
     public DocumentDetailResponse findById(UUID id) {
@@ -70,7 +66,6 @@ public class DocumentService {
             throw new IllegalArgumentException("No se pudo procesar el archivo");
         }
         UUID documentId = UUID.randomUUID();
-        System.out.println("DOCUMENT ID = " + documentId);
         Document doc = documentFactory.build(
                 documentId,
                 text,
@@ -78,33 +73,23 @@ public class DocumentService {
                 fuente,
                 file.getOriginalFilename()
         );
-        System.out.println("DOC PARENT = " +
-                doc.getMetadata().get("parent_document_id"));
 
         List<Document> chunks =
                 tokenTextSplitter.split(List.of(doc));
-
-        chunks.forEach(chunk ->
-                chunk.getMetadata().put(
-                        "parent_document_id",
-                        documentId.toString()
-                )
-        );
+        Long fileSize = file.getSize();
+        String mimeType = file.getContentType();
         DocumentEntity documentEntity = new DocumentEntity(
                 documentId,
                 fileName,
+                text,
+                fileSize,
+                mimeType,
                 categoria,
                 fuente,
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd--MM-yyyy")),
                 chunks.size()
         );
         vectorStore.add(chunks);
-        chunks.forEach(chunk -> {
-            System.out.println(
-                    "CHUNK PARENT = "
-                            + chunk.getMetadata().get("parent_document_id")
-            );
-        });
         documentRepository.save(documentEntity);
 
 
