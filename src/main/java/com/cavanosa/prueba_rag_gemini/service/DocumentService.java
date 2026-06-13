@@ -1,16 +1,15 @@
 package com.cavanosa.prueba_rag_gemini.service;
 
-import com.cavanosa.prueba_rag_gemini.dto.DocumentDeleteResponse;
-import com.cavanosa.prueba_rag_gemini.dto.DocumentDetailResponse;
-import com.cavanosa.prueba_rag_gemini.dto.DocumentSummaryResponse;
-import com.cavanosa.prueba_rag_gemini.dto.UploadResponse;
+import com.cavanosa.prueba_rag_gemini.dto.*;
 import com.cavanosa.prueba_rag_gemini.entity.DocumentEntity;
 import com.cavanosa.prueba_rag_gemini.repository.DocumentRepository;
+import com.cavanosa.prueba_rag_gemini.specification.DocumentSpecification;
 import com.cavanosa.prueba_rag_gemini.utils.DocumentFactory;
 import com.cavanosa.prueba_rag_gemini.utils.TextExtractor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +37,17 @@ public class DocumentService {
 
     public List<DocumentSummaryResponse> getall() {
         return documentRepository.findAll().stream().map(DocumentSummaryResponse::fromEntity).toList();
+    }
+
+    public List<String> getCategorias() {
+        return documentRepository.findDistinctCategorias();
+    }
+
+    //specification
+    public List<DocumentDetailResponse> findBySpecification(DocumentFilterRequest filters) {
+        Specification<DocumentEntity> spec = DocumentSpecification.withFilters(filters);
+        return documentRepository.findAll(spec).stream()
+                .map(DocumentDetailResponse::from).toList();
     }
 
     public DocumentDetailResponse findById(UUID id) {

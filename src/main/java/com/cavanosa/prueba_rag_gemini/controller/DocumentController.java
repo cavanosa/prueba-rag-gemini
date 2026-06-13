@@ -1,9 +1,6 @@
 package com.cavanosa.prueba_rag_gemini.controller;
 
-import com.cavanosa.prueba_rag_gemini.dto.DocumentDeleteResponse;
-import com.cavanosa.prueba_rag_gemini.dto.DocumentDetailResponse;
-import com.cavanosa.prueba_rag_gemini.dto.DocumentSummaryResponse;
-import com.cavanosa.prueba_rag_gemini.dto.UploadResponse;
+import com.cavanosa.prueba_rag_gemini.dto.*;
 import com.cavanosa.prueba_rag_gemini.model.ApiResponse;
 import com.cavanosa.prueba_rag_gemini.service.DocumentService;
 import org.springframework.http.HttpStatus;
@@ -26,14 +23,18 @@ public class DocumentController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DocumentSummaryResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.ok(documentService.getall()));
+    public ResponseEntity<ApiResponse<List<DocumentDetailResponse>>> findBySpecification(@ModelAttribute DocumentFilterRequest filters) {
+        return ResponseEntity.ok(ApiResponse.ok(documentService.findBySpecification(filters)));
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<DocumentDetailResponse>> findById(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(documentService.findById(id)));
+    }
+
+    @GetMapping("/categorias")
+    public ResponseEntity<ApiResponse<List<String>>> getCategorias() {
+        return ResponseEntity.ok(ApiResponse.ok(documentService.getCategorias()));
     }
 
     @PostMapping
